@@ -1,5 +1,7 @@
 # Shattered New World
 
+**[Subscribe on the Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3842071973)**
+
 > [!WARNING]
 > **This mod was written entirely by an AI coding agent (Claude Code). No human has reviewed the code.**
 > It has been played and works in the author's games, but it hasn't been checked line by line by a person, or tested with every bookmark, DLC or mod combination. It could break saves, behave unexpectedly, or stop working after a game update. Use it at your own risk, and please [report bugs](../../issues).
@@ -8,7 +10,7 @@ A Crusader Kings III mod (built against game version 1.20.1) that keeps the real
 
 ## Installing
 
-**From the Steam Workshop (recommended):** subscribe to the mod, then enable **Shattered New World** in a playset in the Paradox launcher.
+**From the Steam Workshop (recommended):** [subscribe to the mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3842071973), then enable **Shattered New World** in a playset in the Paradox launcher.
 
 **Manually from this repository:**
 1. Copy this folder into your CK3 `mod` folder (`Documents/Paradox Interactive/Crusader Kings III/mod/` on Windows, `~/.local/share/Paradox Interactive/Crusader Kings III/mod/` on Linux).
