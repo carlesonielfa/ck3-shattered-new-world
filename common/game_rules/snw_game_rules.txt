@@ -1,0 +1,66 @@
+﻿# Shattered New World - game rules
+# All rules are read once, in on_game_start_after_lobby (see common/on_action/snw_on_actions.txt).
+
+snw_enabled = {
+	categories = { game_modes }
+	default = snw_enabled_on
+
+	snw_enabled_on = {}
+	snw_enabled_off = {}
+}
+
+# How far historical realms are broken up.
+snw_shatter_level = {
+	categories = { game_modes }
+	default = snw_shatter_kingdoms
+
+	snw_shatter_empires = {}	# Empires destroyed; kingdoms are the largest independent realms
+	snw_shatter_kingdoms = {}	# Empires and kingdoms destroyed; duchies are the largest realms
+	snw_shatter_duchies = {}	# Everything above county destroyed; counts may still hold several counties
+	snw_shatter_counties = {}	# Everything above county destroyed; every county gets its own ruler
+}
+
+snw_ruler_age = {
+	categories = { game_modes }
+	default = snw_ruler_age_standard
+
+	snw_ruler_age_standard = {}	# 18-60, most rulers in their 30s and 40s
+	snw_ruler_age_young = {}	# 16-35
+	snw_ruler_age_mature = {}	# 35-70
+	snw_ruler_age_any = {}		# 2-75, child rulers possible
+}
+
+snw_family = {
+	categories = { game_modes }
+	default = snw_family_large
+
+	snw_family_large = {}		# Spouse, children, siblings and a deceased father
+	snw_family_small = {}		# Spouse and children
+	snw_family_none = {}		# Rulers start alone
+}
+
+snw_ruler_identity = {
+	categories = { game_modes }
+	default = snw_identity_previous
+
+	snw_identity_previous = {}	# New ruler shares the culture and faith of the ruler they replace
+	snw_identity_local = {}		# New ruler takes the culture and faith of their capital county
+}
+
+snw_related_rulers = {
+	categories = { game_modes }
+	default = snw_related_some
+
+	snw_related_some = {}
+	snw_related_many = {}
+	snw_related_none = {}
+}
+
+snw_starting_resources = {
+	categories = { game_modes }
+	default = snw_resources_normal
+
+	snw_resources_normal = {}
+	snw_resources_rich = {}
+	snw_resources_none = {}
+}

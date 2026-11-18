@@ -1,0 +1,65 @@
+﻿# Shattered New World - scripted triggers
+
+# Title scope. Titles above the cap that get destroyed when realms are broken up.
+# Faith-head titles, landless organisations and clerical regions are kept so their systems keep working.
+snw_dissolvable_title_trigger = {
+	exists = holder
+	is_head_of_faith = no
+	is_mercenary_company = no
+	is_holy_order = no
+	is_landless_type_title = no
+	is_noble_family_title = no
+	has_clerical_region = no
+}
+
+# Character scope. Rulers who are not part of the feudal hierarchy we rebuild and who get no family:
+# clergy, holy orders, mercenaries.
+snw_special_ruler_trigger = {
+	OR = {
+		government_has_flag = government_is_theocracy
+		government_has_flag = government_is_ecclesiastical
+		government_has_flag = government_is_holy_order
+		government_has_flag = government_is_mercenary
+		government_has_flag = government_is_landless_adventurer
+	}
+}
+
+# Character scope. True if the ruler is at or above the largest tier allowed to be a vassal-free realm,
+# i.e. they must be independent under the chosen shatter level.
+snw_at_realm_cap_trigger = {
+	OR = {
+		AND = {
+			has_game_rule = snw_shatter_empires
+			highest_held_title_tier >= tier_kingdom
+		}
+		AND = {
+			has_game_rule = snw_shatter_kingdoms
+			highest_held_title_tier >= tier_duchy
+		}
+		AND = {
+			OR = {
+				has_game_rule = snw_shatter_duchies
+				has_game_rule = snw_shatter_counties
+			}
+			highest_held_title_tier >= tier_county
+		}
+	}
+}
+
+# Character scope. The ruler is a vassal whose position is no longer valid after higher titles were destroyed.
+snw_must_become_independent_trigger = {
+	is_independent_ruler = no
+	exists = liege
+	highest_held_title_tier >= tier_county
+	# Landless organisations and clerical-region holders sit outside the feudal chain we rebuild
+	NOR = {
+		government_has_flag = government_is_ecclesiastical
+		government_has_flag = government_is_holy_order
+		government_has_flag = government_is_mercenary
+		government_has_flag = government_is_landless_adventurer
+	}
+	OR = {
+		snw_at_realm_cap_trigger = yes
+		liege.highest_held_title_tier <= highest_held_title_tier
+	}
+}

@@ -1,0 +1,16 @@
+﻿# Shattered New World - entry point
+# Appends to vanilla's on_game_start_after_lobby without overriding its effect block.
+
+on_game_start_after_lobby = {
+	on_actions = { snw_on_game_start_after_lobby }
+}
+
+snw_on_game_start_after_lobby = {
+	trigger = {
+		has_game_rule = snw_enabled_on
+		NOT = { exists = global_var:snw_world_generated }
+	}
+	effect = {
+		snw_setup_effect = yes
+	}
+}

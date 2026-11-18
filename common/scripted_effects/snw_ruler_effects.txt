@@ -1,0 +1,721 @@
+﻿# Shattered New World - generating rulers, their families and courts
+
+### Character generation
+
+# Creates a new ruler in scope:snw_new, modelled on $SOURCE$ (the ruler they replace or split from).
+# Optional saved scope snw_land: the county used for location and, with the Local identity rule, culture and faith.
+snw_spawn_ruler_effect = {
+	clear_saved_scope = snw_identity
+	clear_saved_scope = snw_birthplace
+	clear_saved_scope = snw_kin_house
+	clear_saved_scope = snw_new
+
+	# Culture and faith
+	if = {
+		limit = {
+			has_game_rule = snw_identity_local
+			exists = $LAND$.title_province
+			$SOURCE$ = { snw_special_ruler_trigger = no }
+		}
+		$LAND$ = { save_scope_as = snw_identity }
+	}
+	else = {
+		$SOURCE$ = { save_scope_as = snw_identity }
+	}
+
+	# Where they are born
+	if = {
+		limit = { exists = $LAND$.title_province }
+		$LAND$.title_province = { save_scope_as = snw_birthplace }
+	}
+	else = {
+		$SOURCE$.location = { save_scope_as = snw_birthplace }
+	}
+
+	# Clergy, holy orders, mercenaries and barons are lowborn; everyone else founds or joins a dynasty
+	if = {
+		limit = {
+			$SOURCE$ = {
+				OR = {
+					snw_special_ruler_trigger = yes
+					highest_held_title_tier <= tier_barony
+				}
+			}
+		}
+		snw_create_ruler_character_effect = {
+			SOURCE = $SOURCE$
+			DYNASTY_KEY = dynasty
+			DYNASTY_VALUE = none
+		}
+	}
+	else = {
+		if = {
+			limit = {
+				NOT = { has_game_rule = snw_related_none }
+				exists = $LAND$.title_province
+			}
+			random = {
+				chance = snw_related_chance_value
+				$LAND$ = {
+					random_neighboring_county = {
+						limit = {
+							holder ?= {
+								has_character_flag = snw_generated
+								is_lowborn = no
+								culture = scope:snw_identity.culture
+							}
+						}
+						holder.house = { save_scope_as = snw_kin_house }
+					}
+				}
+			}
+		}
+		if = {
+			limit = { exists = scope:snw_kin_house }
+			snw_create_ruler_character_effect = {
+				SOURCE = $SOURCE$
+				DYNASTY_KEY = dynasty_house
+				DYNASTY_VALUE = scope:snw_kin_house
+			}
+		}
+		else = {
+			snw_create_ruler_character_effect = {
+				SOURCE = $SOURCE$
+				DYNASTY_KEY = dynasty
+				DYNASTY_VALUE = generate
+			}
+		}
+	}
+}
+
+snw_create_ruler_character_effect = {
+	create_character = {
+		age = {
+			value = 0
+			if = {
+				limit = { $SOURCE$ = { snw_special_ruler_trigger = yes } }
+				add = { integer_range = { min = 25 max = 60 } }
+			}
+			else = {
+				add = snw_ruler_age_value
+			}
+		}
+		culture = scope:snw_identity.culture
+		faith = scope:snw_identity.faith
+		rite = scope:snw_identity.rite
+		gender_female_chance = {
+			value = 50
+			if = {
+				# Clergy and orders keep the gender the office requires
+				limit = { $SOURCE$ = { snw_special_ruler_trigger = yes } }
+				value = 0
+				if = {
+					limit = { $SOURCE$ = { is_female = yes } }
+					value = 100
+				}
+			}
+			else_if = {
+				limit = { scope:snw_identity.rite = { rite_has_doctrine = doctrine_gender_male_dominated } }
+				value = 5
+			}
+			else_if = {
+				limit = { scope:snw_identity.rite = { rite_has_doctrine = doctrine_gender_female_dominated } }
+				value = 95
+			}
+		}
+		location = scope:snw_birthplace
+		$DYNASTY_KEY$ = $DYNASTY_VALUE$
+		random_traits = yes
+		save_scope_as = snw_new
+	}
+	scope:snw_new = {
+		add_character_flag = snw_generated
+		set_character_rite = scope:snw_identity.rite
+		add_to_list = snw_new_rulers
+	}
+}
+
+### Government and laws carried over from the replaced ruler
+
+# Scope: historical ruler, before losing titles.
+# Administrative-style governments (Byzantine, Chinese, Japanese, Korean, steppe admin) need an intact empire
+# and noble families, neither of which survive the break-up, so they become feudal.
+snw_record_government_effect = {
+	if = {
+		limit = { has_government = clan_government }
+		set_variable = { name = snw_gov value = flag:clan }
+	}
+	else_if = {
+		limit = { has_government = tribal_government }
+		set_variable = { name = snw_gov value = flag:tribal }
+	}
+	else_if = {
+		limit = { has_government = wanua_government }
+		set_variable = { name = snw_gov value = flag:wanua }
+	}
+	else_if = {
+		limit = { has_government = republic_government }
+		set_variable = { name = snw_gov value = flag:republic }
+	}
+	else_if = {
+		limit = { has_government = theocracy_government }
+		set_variable = { name = snw_gov value = flag:theocracy }
+	}
+	else_if = {
+		limit = { has_government = ecclesiastical_government }
+		set_variable = { name = snw_gov value = flag:ecclesiastical }
+	}
+	else_if = {
+		limit = { has_government = mandala_government }
+		set_variable = { name = snw_gov value = flag:mandala }
+	}
+	else_if = {
+		limit = { has_government = nomad_government }
+		set_variable = { name = snw_gov value = flag:nomad }
+	}
+	else_if = {
+		limit = { has_government = herder_government }
+		set_variable = { name = snw_gov value = flag:herder }
+	}
+	else_if = {
+		limit = { has_government = mercenary_government }
+		set_variable = { name = snw_gov value = flag:mercenary }
+	}
+	else_if = {
+		limit = { has_government = holy_order_government }
+		set_variable = { name = snw_gov value = flag:holy_order }
+	}
+	else_if = {
+		limit = { has_government = monastic_holy_order_government }
+		set_variable = { name = snw_gov value = flag:monastic_holy_order }
+	}
+	else = {
+		set_variable = { name = snw_gov value = flag:feudal }
+	}
+}
+
+# Scope: new ruler, after receiving titles.
+snw_apply_government_effect = {
+	if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:clan }
+		snw_set_government_effect = { GOV = clan_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:tribal }
+		snw_set_government_effect = { GOV = tribal_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:wanua }
+		snw_set_government_effect = { GOV = wanua_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:republic }
+		snw_set_government_effect = { GOV = republic_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:theocracy }
+		snw_set_government_effect = { GOV = theocracy_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:ecclesiastical }
+		snw_set_government_effect = { GOV = ecclesiastical_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:mandala }
+		snw_set_government_effect = { GOV = mandala_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:nomad }
+		snw_set_government_effect = { GOV = nomad_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:herder }
+		snw_set_government_effect = { GOV = herder_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:mercenary }
+		snw_set_government_effect = { GOV = mercenary_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:holy_order }
+		snw_set_government_effect = { GOV = holy_order_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:monastic_holy_order }
+		snw_set_government_effect = { GOV = monastic_holy_order_government }
+	}
+	else_if = {
+		limit = { $SOURCE$.var:snw_gov ?= flag:feudal }
+		snw_set_government_effect = { GOV = feudal_government }
+	}
+	else = {
+		snw_set_government_effect = { GOV = feudal_government }
+	}
+}
+
+snw_set_government_effect = {
+	if = {
+		limit = { NOT = { has_government = $GOV$ } }
+		change_government = $GOV$
+	}
+}
+
+# Crown, tribal and nomadic authority are part of how established a realm is, so they carry over.
+# Succession and other laws are left to the game's own defaults for the new ruler's culture and faith.
+snw_record_authority_laws_effect = {
+	if = {
+		limit = { has_realm_law = crown_authority_3 }
+		set_variable = { name = snw_auth value = flag:crown_authority_3 }
+	}
+	else_if = {
+		limit = { has_realm_law = crown_authority_2 }
+		set_variable = { name = snw_auth value = flag:crown_authority_2 }
+	}
+	else_if = {
+		limit = { has_realm_law = crown_authority_1 }
+		set_variable = { name = snw_auth value = flag:crown_authority_1 }
+	}
+	else_if = {
+		limit = { has_realm_law = tribal_authority_3 }
+		set_variable = { name = snw_auth value = flag:tribal_authority_3 }
+	}
+	else_if = {
+		limit = { has_realm_law = tribal_authority_2 }
+		set_variable = { name = snw_auth value = flag:tribal_authority_2 }
+	}
+	else_if = {
+		limit = { has_realm_law = tribal_authority_1 }
+		set_variable = { name = snw_auth value = flag:tribal_authority_1 }
+	}
+	else_if = {
+		limit = { has_realm_law = nomadic_authority_5 }
+		set_variable = { name = snw_auth value = flag:nomadic_authority_5 }
+	}
+	else_if = {
+		limit = { has_realm_law = nomadic_authority_4 }
+		set_variable = { name = snw_auth value = flag:nomadic_authority_4 }
+	}
+	else_if = {
+		limit = { has_realm_law = nomadic_authority_3 }
+		set_variable = { name = snw_auth value = flag:nomadic_authority_3 }
+	}
+	else_if = {
+		limit = { has_realm_law = nomadic_authority_2 }
+		set_variable = { name = snw_auth value = flag:nomadic_authority_2 }
+	}
+}
+
+snw_apply_authority_laws_effect = {
+	if = {
+		limit = {
+			OR = {
+				government_has_flag = government_is_feudal
+				government_has_flag = government_is_clan
+			}
+		}
+		if = {
+			limit = { $SOURCE$.var:snw_auth ?= flag:crown_authority_3 }
+			add_realm_law_skip_effects = crown_authority_3
+		}
+		else_if = {
+			limit = { $SOURCE$.var:snw_auth ?= flag:crown_authority_2 }
+			add_realm_law_skip_effects = crown_authority_2
+		}
+		else_if = {
+			limit = { $SOURCE$.var:snw_auth ?= flag:crown_authority_1 }
+			add_realm_law_skip_effects = crown_authority_1
+		}
+	}
+	else_if = {
+		limit = { government_has_flag = government_is_tribal }
+		if = {
+			limit = { $SOURCE$.var:snw_auth ?= flag:tribal_authority_3 }
+			add_realm_law_skip_effects = tribal_authority_3
+		}
+		else_if = {
+			limit = { $SOURCE$.var:snw_auth ?= flag:tribal_authority_2 }
+			add_realm_law_skip_effects = tribal_authority_2
+		}
+		else_if = {
+			limit = { $SOURCE$.var:snw_auth ?= flag:tribal_authority_1 }
+			add_realm_law_skip_effects = tribal_authority_1
+		}
+	}
+	else_if = {
+		limit = { government_has_flag = government_is_nomadic }
+		if = {
+			limit = { $SOURCE$.var:snw_auth ?= flag:nomadic_authority_5 }
+			add_realm_law_skip_effects = nomadic_authority_5
+		}
+		else_if = {
+			limit = { $SOURCE$.var:snw_auth ?= flag:nomadic_authority_4 }
+			add_realm_law_skip_effects = nomadic_authority_4
+		}
+		else_if = {
+			limit = { $SOURCE$.var:snw_auth ?= flag:nomadic_authority_3 }
+			add_realm_law_skip_effects = nomadic_authority_3
+		}
+		else_if = {
+			limit = { $SOURCE$.var:snw_auth ?= flag:nomadic_authority_2 }
+			add_realm_law_skip_effects = nomadic_authority_2
+		}
+	}
+}
+
+### Finishing touches for each new ruler
+
+# Scope: new ruler. Mirrors the per-ruler game-start setup vanilla gives historical rulers.
+snw_finalize_ruler_effect = {
+	save_scope_as = snw_head
+	if = {
+		limit = {
+			is_alive = yes
+			is_ruler = yes
+		}
+		# Legitimacy, as vanilla sets it at game start
+		if = {
+			limit = { has_legitimacy = yes }
+			add_legitimacy = base_legitimacy_value
+		}
+		# Coronation
+		if = {
+			limit = {
+				coronation_trigger = yes
+				highest_held_title_tier = tier_kingdom
+			}
+			add_realm_law_skip_effects = crowned_king
+			set_variable = crowned_king_var
+		}
+		# Government-specific setup
+		if = {
+			limit = {
+				government_has_flag = government_is_nomadic
+				NOT = { has_trait = nomadic_philosophy }
+			}
+			add_trait = nomadic_philosophy
+		}
+		if = {
+			limit = { government_has_flag = government_is_mandala }
+			change_to_mandala_government_decree_effect = yes
+		}
+		# Child rulers get a regent
+		if = {
+			limit = { is_adult = no }
+			trigger_event = {
+				id = diarchy.0011
+				delayed = yes
+			}
+		}
+
+		if = {
+			limit = {
+				snw_special_ruler_trigger = no
+				highest_held_title_tier >= tier_county
+			}
+			if = {
+				limit = { NOT = { has_game_rule = snw_family_none } }
+				snw_generate_family_effect = yes
+			}
+			snw_generate_courtiers_effect = yes
+			snw_starting_resources_effect = yes
+		}
+	}
+}
+
+### Families
+
+# Scope: new ruler, saved as snw_head.
+snw_generate_family_effect = {
+	clear_saved_scope = snw_spouse
+	clear_saved_scope = snw_father
+	clear_saved_scope = snw_mother
+	clear_saved_scope = snw_parent
+
+	# Spouse
+	if = {
+		limit = {
+			age >= 17
+			is_married = no
+		}
+		random = {
+			chance = 80
+			random_list = {
+				50 = { snw_create_spouse_effect = { DYNASTY = generate } }
+				50 = { snw_create_spouse_effect = { DYNASTY = none } }
+			}
+		}
+	}
+
+	# Children
+	if = {
+		limit = {
+			exists = scope:snw_spouse
+			scope:snw_spouse = { is_alive = yes }
+		}
+		if = {
+			limit = { is_female = yes }
+			save_scope_as = snw_mother
+			scope:snw_spouse = { save_scope_as = snw_father }
+		}
+		else = {
+			save_scope_as = snw_father
+			scope:snw_spouse = { save_scope_as = snw_mother }
+		}
+		# Age of the younger parent
+		set_variable = {
+			name = snw_parent_age
+			value = {
+				value = age
+				max = scope:snw_spouse.age
+			}
+		}
+		set_variable = {
+			name = snw_child_age
+			value = {
+				value = var:snw_parent_age
+				subtract = { integer_range = { min = 17 max = 24 } }
+			}
+		}
+		set_variable = { name = snw_child_count value = 0 }
+		snw_update_age_at_birth_effect = yes
+		while = {
+			limit = {
+				var:snw_child_age >= 0
+				var:snw_child_count < 6
+				# Stop once the younger parent would have been over 40 at the birth
+				var:snw_age_at_birth <= 40
+			}
+			random = {
+				chance = 75
+				snw_create_child_effect = yes
+				change_variable = { name = snw_child_count add = 1 }
+			}
+			change_variable = {
+				name = snw_child_age
+				subtract = { integer_range = { min = 1 max = 4 } }
+			}
+			snw_update_age_at_birth_effect = yes
+		}
+		remove_variable = snw_parent_age
+		remove_variable = snw_age_at_birth
+		remove_variable = snw_child_age
+		remove_variable = snw_child_count
+	}
+
+	# Deceased parent and siblings
+	if = {
+		limit = { has_game_rule = snw_family_large }
+		snw_generate_siblings_effect = yes
+	}
+}
+
+snw_update_age_at_birth_effect = {
+	set_variable = {
+		name = snw_age_at_birth
+		value = {
+			value = var:snw_parent_age
+			subtract = var:snw_child_age
+		}
+	}
+}
+
+snw_create_spouse_effect = {
+	create_character = {
+		age = {
+			value = scope:snw_head.age
+			add = { integer_range = { min = -10 max = 5 } }
+			min = 16
+		}
+		culture = scope:snw_head.culture
+		faith = scope:snw_head.faith
+		rite = scope:snw_head.rite
+		gender_female_chance = scope:snw_head.marriage_gender_adjusted_female_chance
+		employer = scope:snw_head
+		dynasty = $DYNASTY$
+		random_traits = yes
+		save_scope_as = snw_spouse
+	}
+	scope:snw_spouse = { add_character_flag = snw_generated }
+	if = {
+		limit = { scope:snw_head = { is_female = no } }
+		scope:snw_head = { marry = scope:snw_spouse }
+	}
+	else = {
+		scope:snw_head = { marry_matrilineal = scope:snw_spouse }
+	}
+}
+
+snw_create_child_effect = {
+	create_character = {
+		age = scope:snw_head.var:snw_child_age
+		culture = scope:snw_head.culture
+		faith = scope:snw_head.faith
+		rite = scope:snw_head.rite
+		gender_female_chance = 50
+		father = scope:snw_father
+		mother = scope:snw_mother
+		dynasty_house = scope:snw_head.house
+		employer = scope:snw_head
+		random_traits = yes
+		save_scope_as = snw_child
+	}
+	scope:snw_child = { add_character_flag = snw_generated }
+}
+
+# A parent who died before the game started, plus 0-3 siblings who live at the ruler's court.
+snw_generate_siblings_effect = {
+	create_character = {
+		age = {
+			value = scope:snw_head.age
+			add = { integer_range = { min = 24 max = 34 } }
+		}
+		culture = scope:snw_head.culture
+		faith = scope:snw_head.faith
+		rite = scope:snw_head.rite
+		gender_female_chance = {
+			value = 0
+			if = {
+				limit = { scope:snw_head.rite = { rite_has_doctrine = doctrine_gender_female_dominated } }
+				value = 100
+			}
+		}
+		dynasty_house = scope:snw_head.house
+		location = scope:snw_head.location
+		random_traits = yes
+		save_scope_as = snw_parent
+	}
+	scope:snw_parent = { add_character_flag = snw_generated }
+
+	if = {
+		limit = { scope:snw_parent = { is_female = yes } }
+		set_mother = scope:snw_parent
+		snw_create_siblings_effect = { ROLE = mother }
+	}
+	else = {
+		set_father = scope:snw_parent
+		snw_create_siblings_effect = { ROLE = father }
+	}
+
+	scope:snw_parent = {
+		death = { death_reason = death_natural_causes }
+	}
+}
+
+snw_create_siblings_effect = {
+	random_list = {
+		25 = {}
+		35 = { snw_create_sibling_effect = { ROLE = $ROLE$ } }
+		25 = {
+			snw_create_sibling_effect = { ROLE = $ROLE$ }
+			snw_create_sibling_effect = { ROLE = $ROLE$ }
+		}
+		15 = {
+			snw_create_sibling_effect = { ROLE = $ROLE$ }
+			snw_create_sibling_effect = { ROLE = $ROLE$ }
+			snw_create_sibling_effect = { ROLE = $ROLE$ }
+		}
+	}
+}
+
+snw_create_sibling_effect = {
+	create_character = {
+		age = {
+			value = scope:snw_head.age
+			# Parent is 24-34 years older than the ruler, so every sibling's parent was 17-41 at the birth
+			add = { integer_range = { min = -7 max = 6 } }
+			min = 0
+		}
+		culture = scope:snw_head.culture
+		faith = scope:snw_head.faith
+		rite = scope:snw_head.rite
+		gender_female_chance = 50
+		$ROLE$ = scope:snw_parent
+		dynasty_house = scope:snw_head.house
+		employer = scope:snw_head
+		random_traits = yes
+		save_scope_as = snw_sibling
+	}
+	scope:snw_sibling = { add_character_flag = snw_generated }
+}
+
+### Courts
+
+# A few lowborn courtiers so councils and courts are not empty at start.
+snw_generate_courtiers_effect = {
+	if = {
+		limit = { highest_held_title_tier >= tier_kingdom }
+		while = {
+			count = 4
+			snw_create_courtier_effect = yes
+		}
+	}
+	else_if = {
+		limit = { highest_held_title_tier = tier_duchy }
+		while = {
+			count = 3
+			snw_create_courtier_effect = yes
+		}
+	}
+	else = {
+		while = {
+			count = 2
+			snw_create_courtier_effect = yes
+		}
+	}
+}
+
+snw_create_courtier_effect = {
+	create_character = {
+		age = { 18 55 }
+		culture = scope:snw_head.culture
+		faith = scope:snw_head.faith
+		rite = scope:snw_head.rite
+		gender_female_chance = scope:snw_head.marriage_gender_adjusted_female_chance
+		employer = scope:snw_head
+		dynasty = none
+		random_traits = yes
+		save_scope_as = snw_courtier
+	}
+	scope:snw_courtier = { add_character_flag = snw_generated }
+}
+
+### Starting resources
+
+snw_starting_resources_effect = {
+	if = {
+		limit = { NOT = { has_game_rule = snw_resources_none } }
+		if = {
+			limit = { highest_held_title_tier >= tier_kingdom }
+			add_gold = { value = 0 add = { integer_range = { min = 150 max = 300 } } multiply = snw_resource_mult_value }
+			add_prestige = { value = 0 add = { integer_range = { min = 300 max = 600 } } multiply = snw_resource_mult_value }
+			add_piety = { value = 0 add = { integer_range = { min = 100 max = 250 } } multiply = snw_resource_mult_value }
+		}
+		else_if = {
+			limit = { highest_held_title_tier = tier_duchy }
+			add_gold = { value = 0 add = { integer_range = { min = 60 max = 150 } } multiply = snw_resource_mult_value }
+			add_prestige = { value = 0 add = { integer_range = { min = 150 max = 350 } } multiply = snw_resource_mult_value }
+			add_piety = { value = 0 add = { integer_range = { min = 50 max = 150 } } multiply = snw_resource_mult_value }
+		}
+		else = {
+			add_gold = { value = 0 add = { integer_range = { min = 20 max = 60 } } multiply = snw_resource_mult_value }
+			add_prestige = { value = 0 add = { integer_range = { min = 50 max = 150 } } multiply = snw_resource_mult_value }
+			add_piety = { value = 0 add = { integer_range = { min = 25 max = 75 } } multiply = snw_resource_mult_value }
+		}
+	}
+}
+
+### Removing everyone from real history
+
+snw_remove_historical_characters_effect = {
+	every_living_character = {
+		limit = {
+			NOT = { has_character_flag = snw_generated }
+			NOT = { any_held_title = { always = yes } }
+		}
+		add_to_list = snw_doomed_characters
+	}
+	every_in_list = {
+		list = snw_doomed_characters
+		death = { death_reason = death_vanished }
+	}
+}

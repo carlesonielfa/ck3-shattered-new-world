@@ -1,0 +1,52 @@
+﻿# Shattered New World - script values
+
+# Ruler age. Sum of two random ranges gives a bell-ish curve, so most rulers are middle-aged.
+snw_ruler_age_value = {
+	value = 0
+	if = {
+		limit = { has_game_rule = snw_ruler_age_young }
+		add = { integer_range = { min = 8 max = 17 } }
+		add = { integer_range = { min = 8 max = 18 } }
+	}
+	else_if = {
+		limit = { has_game_rule = snw_ruler_age_mature }
+		add = 35
+		add = { integer_range = { min = 0 max = 17 } }
+		add = { integer_range = { min = 0 max = 18 } }
+	}
+	else_if = {
+		limit = { has_game_rule = snw_ruler_age_any }
+		add = { integer_range = { min = 1 max = 37 } }
+		add = { integer_range = { min = 1 max = 38 } }
+	}
+	else = {
+		add = { integer_range = { min = 9 max = 30 } }
+		add = { integer_range = { min = 9 max = 30 } }
+	}
+}
+
+# Chance (percent) that a new ruler joins the house of a neighbouring new ruler.
+snw_related_chance_value = {
+	value = 0
+	if = {
+		limit = { has_game_rule = snw_related_some }
+		add = 15
+	}
+	else_if = {
+		limit = { has_game_rule = snw_related_many }
+		add = 35
+	}
+}
+
+# Multiplier for starting gold, prestige and piety.
+snw_resource_mult_value = {
+	value = 1
+	if = {
+		limit = { has_game_rule = snw_resources_rich }
+		value = 2
+	}
+	else_if = {
+		limit = { has_game_rule = snw_resources_none }
+		value = 0
+	}
+}
