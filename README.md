@@ -35,7 +35,9 @@ A Crusader Kings III mod (built against game version 1.20.1) that keeps the real
 | Related Neighbours | **Some** (15%) / Many (35%) / None | Chance that a new ruler joins the dynasty of a neighbouring new ruler of the same culture. |
 | Starting Resources | **Normal** / Rich / None | Gold, prestige and piety by rank. |
 
-Leave the vanilla **Generate Families** rule off. Otherwise vanilla may add a second set of children to the new rulers.
+Leave the vanilla **Generate Families** rule off.
+
+**Upgrade from 1.0.2 before loading a save.** In 1.0.2, loading a save and unpausing could run the generation again and shatter your world a second time. 1.0.3 fixes this. Otherwise vanilla may add a second set of children to the new rulers.
 
 ## What changes and what stays
 
@@ -54,7 +56,7 @@ Leave the vanilla **Generate Families** rule off. Otherwise vanilla may add a se
 
 ## How it works
 
-Everything runs once from `on_game_start_after_lobby`, appended without overriding vanilla's own block:
+Everything runs once from `on_game_start_after_lobby`, appended without overriding vanilla's own block. That hook can fire again in a loaded save, so generation only runs if `on_game_start` (new games only) has just set `snw_new_game`, `snw_world_generated` isn't set, and no living character has the `snw_generated` flag:
 
 1. `snw_remove_historical_only_titles_effect`: removes noble-family and adventurer titles.
 2. `snw_dissolve_high_titles_effect` and `snw_fix_vassalage_effect`: destroy titles above the cap, then make vassals independent where their position is no longer valid.

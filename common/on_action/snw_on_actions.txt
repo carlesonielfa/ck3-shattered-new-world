@@ -1,16 +1,43 @@
 ﻿# Shattered New World - entry point
-# Appends to vanilla's on_game_start_after_lobby without overriding its effect block.
+# Appends to vanilla's on_game_start and on_game_start_after_lobby without overriding their effect blocks.
+#
+# on_game_start_after_lobby can fire again in a loaded save (seen in 1.21: it ran after
+# loading a save and unpausing). So the world is only generated when ALL of these hold,
+# and every check fails safe (a missing value means "don't run"):
+#   - snw_new_game is set: it's set only by on_game_start, which runs for new games only,
+#     and is cleared straight after the lobby, so it never exists in a saved game
+#   - snw_world_generated is not set (set at the end of a successful generation)
+#   - no living character has the snw_generated flag (independent of any global variable)
+# The checks are in the effect's own `if`, not in the on_action trigger, so they are
+# evaluated however the engine fires the on_action.
+
+on_game_start = {
+	on_actions = { snw_on_game_start }
+}
+
+snw_on_game_start = {
+	effect = {
+		set_global_variable = { name = snw_new_game value = yes }
+	}
+}
 
 on_game_start_after_lobby = {
 	on_actions = { snw_on_game_start_after_lobby }
 }
 
 snw_on_game_start_after_lobby = {
-	trigger = {
-		has_game_rule = snw_enabled_on
-		NOT = { exists = global_var:snw_world_generated }
-	}
 	effect = {
-		snw_setup_effect = yes
+		if = {
+			limit = {
+				has_game_rule = snw_enabled_on
+				has_global_variable = snw_new_game
+				NOT = { has_global_variable = snw_world_generated }
+				NOT = {
+					any_living_character = { has_character_flag = snw_generated }
+				}
+			}
+			snw_setup_effect = yes
+		}
+		remove_global_variable = snw_new_game
 	}
 }
